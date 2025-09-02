@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  createContext,
+  useContext,
+} from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,9 +12,40 @@ import {
   Link,
   useNavigate,
 } from "react-router-dom";
-import "./App.css"; // This import expects App.css to be directly in the src/ directory
-import { MediaProvider } from "./context/MediaProvider"; // This import expects MediaProvider.jsx in src/context/
-import { useMedia } from "./hooks/UseMedia"; // This import expects useMedia.jsx in src/hooks/
+import "tailwindcss/tailwind.css";
+
+// -------------------------------------------------------------------------------- //
+// 1. Context and Hooks (all within this single file)
+// -------------------------------------------------------------------------------- //
+
+// Context object
+const MediaContext = createContext();
+
+// Custom hook to consume the context
+const useMedia = () => {
+  const context = useContext(MediaContext);
+  if (context === undefined) {
+    throw new Error("useMedia must be used within a MediaProvider");
+  }
+  return context;
+};
+
+// Provider component
+const MediaProvider = ({ children }) => {
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [recordedMedia, setRecordedMedia] = useState(null);
+
+  const value = {
+    selectedFile,
+    setSelectedFile,
+    recordedMedia,
+    setRecordedMedia,
+  };
+
+  return (
+    <MediaContext.Provider value={value}>{children}</MediaContext.Provider>
+  );
+};
 
 // -------------------------------------------------------------------------------- //
 // 2. Navigation Bar Component
@@ -78,14 +115,19 @@ const UploadPage = () => {
 
   const ALLOWED_FILE_TYPES = [
     "audio/mpeg",
+    "audio/mp3",
     "audio/wav",
+    "audio/flac",
+    "audio/m4a",
     "audio/ogg",
-    "audio/aac",
     "video/mp4",
     "video/webm",
     "video/ogg",
     "video/quicktime",
+    "video/x-m4v",
+    "video/mpeg",
   ];
+  const MIN_FILE_SIZE_BYTES = 50 * 1024; // 50 KB
   const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
 
   const processFile = (file) => {
@@ -95,11 +137,20 @@ const UploadPage = () => {
       setSelectedFile(null);
       return;
     }
+    // Check file type
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
       setErrorMessage(
-        `Invalid file type. Please upload an audio or video file (${ALLOWED_FILE_TYPES.map(
-          (t) => t.split("/")[1]
-        ).join(", ")}).`
+        `Invalid file type. Please upload a supported audio or video file.`
+      );
+      setSelectedFile(null);
+      return;
+    }
+    // Check file size
+    if (file.size < MIN_FILE_SIZE_BYTES) {
+      setErrorMessage(
+        `File size is too small. Minimum size is ${
+          MIN_FILE_SIZE_BYTES / 1024
+        } KB.`
       );
       setSelectedFile(null);
       return;
@@ -227,31 +278,42 @@ const RecordPage = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [stream, setStream] = useState(null);
   const [mediaRecorder, setMediaRecorder] = useState(null);
-  const [audioChunks, setAudioChunks] = useState([]);
+  const [mediaChunks, setMediaChunks] = useState([]);
+  const [isAudioOnly, setIsAudioOnly] = useState(true);
+  const videoRef = useRef(null);
   const navigate = useNavigate();
 
   const startRecording = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      }); // Only audio for now
+      // Request both audio and video permissions
+      const constraints = { audio: true, video: !isAudioOnly };
+      const mediaStream = await navigator.mediaDevices.getUserMedia(
+        constraints
+      );
       setStream(mediaStream);
       setIsRecording(true);
-      setAudioChunks([]); // Clear previous chunks
+      setMediaChunks([]); // Clear previous chunks
 
-      const recorder = new MediaRecorder(mediaStream);
+      // Attach the stream to the video element for live preview
+      if (videoRef.current && !isAudioOnly) {
+        videoRef.current.srcObject = mediaStream;
+      }
+
+      const recorder = new MediaRecorder(mediaStream, {
+        mimeType: "video/webm; codecs=vp8,opus",
+      }); // Supported format
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          setAudioChunks((prev) => [...prev, event.data]);
+          setMediaChunks((prev) => [...prev, event.data]);
         }
       };
       recorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+        const mediaBlob = new Blob(mediaChunks, { type: "video/webm" });
+        const fileExtension = isAudioOnly ? "webm" : "webm";
         const recordedFile = new File(
-          [audioBlob],
-          `recorded-audio-${Date.now()}.webm`,
-          { type: "audio/webm" }
+          [mediaBlob],
+          `recorded-media-${Date.now()}.${fileExtension}`,
+          { type: mediaBlob.type }
         );
         setRecordedMedia(recordedFile);
         mediaStream.getTracks().forEach((track) => track.stop()); // Stop all tracks
@@ -266,7 +328,7 @@ const RecordPage = () => {
       console.error("Error accessing media devices:", err);
       // Using a custom alert/modal is recommended for production apps instead of window.alert
       alert(
-        "Could not access microphone. Please check permissions and ensure no other application is using it."
+        "Could not access microphone/camera. Please check permissions and ensure no other application is using it."
       );
       setIsRecording(false);
     }
@@ -292,10 +354,43 @@ const RecordPage = () => {
       <div className="card record-card">
         <h2 className="section-title">Record Audio/Video</h2>
         <p className="page-description">
-          Click the button below to start recording audio from your microphone.
-          The recording will automatically stop and navigate to results once
-          finished.
+          Toggle the switch to choose between audio and video recording.
         </p>
+
+        {/* Toggle Switch for Audio/Video */}
+        <div className="flex items-center justify-center my-4">
+          <label className="flex items-center cursor-pointer">
+            <div className="relative">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={!isAudioOnly}
+                onChange={() => setIsAudioOnly(!isAudioOnly)}
+                disabled={isRecording}
+              />
+              <div className="block bg-gray-600 w-14 h-8 rounded-full"></div>
+              <div
+                className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition ${
+                  !isAudioOnly ? "translate-x-6 bg-indigo-500" : ""
+                }`}
+              ></div>
+            </div>
+            <div className="ml-3 text-gray-700 font-semibold">
+              {isAudioOnly ? "Audio Only" : "Audio & Video"}
+            </div>
+          </label>
+        </div>
+
+        {!isAudioOnly && (
+          <div className="video-preview-container">
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              className="video-preview"
+            ></video>
+          </div>
+        )}
 
         <button
           onClick={isRecording ? stopRecording : startRecording}
@@ -305,7 +400,7 @@ const RecordPage = () => {
           disabled={
             isRecording &&
             mediaRecorder?.state === "recording" &&
-            audioChunks.length === 0
+            mediaChunks.length === 0
           }
         >
           {isRecording ? (
@@ -315,7 +410,7 @@ const RecordPage = () => {
               Stop Recording
             </div>
           ) : (
-            "Start Recording"
+            `Start Recording ${isAudioOnly ? "(Audio)" : "(Audio & Video)"}`
           )}
         </button>
 
@@ -341,6 +436,10 @@ const ResultsPage = () => {
     navigate("/");
   };
 
+  const getMediaType = (file) => {
+    return file.type.startsWith("audio/") ? "audio" : "video";
+  };
+
   return (
     <div className="page-container results-page-container">
       <div className="card results-card">
@@ -361,6 +460,19 @@ const ResultsPage = () => {
               <span className="result-info-label">Size:</span>{" "}
               {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
             </p>
+            {getMediaType(selectedFile) === "audio" ? (
+              <audio
+                controls
+                src={URL.createObjectURL(selectedFile)}
+                className="media-player"
+              ></audio>
+            ) : (
+              <video
+                controls
+                src={URL.createObjectURL(selectedFile)}
+                className="media-player"
+              ></video>
+            )}
             <p className="result-message">
               This file is ready for backend processing.
             </p>
@@ -382,11 +494,19 @@ const ResultsPage = () => {
               <span className="result-info-label">Size:</span>{" "}
               {(recordedMedia.size / (1024 * 1024)).toFixed(2)} MB
             </p>
-            <audio
-              controls
-              src={URL.createObjectURL(recordedMedia)}
-              className="media-player"
-            ></audio>
+            {getMediaType(recordedMedia) === "audio" ? (
+              <audio
+                controls
+                src={URL.createObjectURL(recordedMedia)}
+                className="media-player"
+              ></audio>
+            ) : (
+              <video
+                controls
+                src={URL.createObjectURL(recordedMedia)}
+                className="media-player"
+              ></video>
+            )}
             <p className="result-message">
               This recorded media is ready for backend processing.
             </p>

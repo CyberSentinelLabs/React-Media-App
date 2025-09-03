@@ -2,7 +2,6 @@ import React, { useState, useContext } from "react";
 import { AppContext } from "../AppContext";
 
 const RecordPage = () => {
-  // We use the useState hook here to manage local component state.
   const { setPage } = useContext(AppContext);
   const [recordingStatus, setRecordingStatus] = useState("idle");
 
@@ -19,10 +18,10 @@ const RecordPage = () => {
       stream.getTracks().forEach((track) => track.stop());
     } catch (err) {
       console.error("Error accessing media devices:", err);
-      setRecordingStatus("denied");
       alert(
         "Permission denied. Please allow access to your camera and microphone."
       );
+      setRecordingStatus("denied");
     }
   };
 
@@ -41,27 +40,33 @@ const RecordPage = () => {
   };
 
   return (
-    <div className="page-container record-page">
-      <h2 className="title-text">Record Media</h2>
-      <div className="button-group">
+    <div className="page-container">
+      <h2 className="page-title">Make A Recording</h2>
+      <p className="page-subtitle">
+        Choose an option below to record video with audio or record audio only.{" "}
+        <p>
+          Your recording can be processed and analyzed  in the results page.
+        </p>
+      </p>
+      <div className="button-group-vertical">
         <button
           onClick={() => startRecording("video-audio")}
-          className="record-button video-button"
+          className="action-button video-button"
         >
           Record Video & Audio
         </button>
         <button
           onClick={() => startRecording("audio-only")}
-          className="record-button audio-button"
+          className="action-button audio-button"
         >
           Record Audio Only
         </button>
       </div>
       {recordingStatus !== "idle" && (
-        <p className="status-text">{getStatusMessage()}</p>
+        <p className="status-message">{getStatusMessage()}</p>
       )}
-      <button onClick={() => setPage("home")} className="back-button">
-        Back to Home
+      <button onClick={() => setPage("home")} className="nav-button">
+        Back
       </button>
     </div>
   );

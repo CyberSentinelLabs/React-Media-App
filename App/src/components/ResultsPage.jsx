@@ -4,13 +4,18 @@ import { AppContext } from "../AppContext";
 const ResultsPage = () => {
   const { setPage } = useContext(AppContext);
   return (
-    <div className="page-container results-page">
-      <h2 className="title-text">Results</h2>
-      <p className="subtitle-text">
-        This page will display the results of your uploads and recordings.
+    <div className="page-container">
+      <h2 className="page-title">Results</h2>
+      <p className="page-subtitle">
+        {" "}
+        There are no results to display.
+        <br /> Upload a file, make a video recording or an audio recording to see
+        results.
       </p>
-      <button onClick={() => setPage("home")} className="back-button">
-        Back to Home
+
+      <p className="page-subtitle"></p>
+      <button onClick={() => setPage("home")} className="nav-button">
+        Back
       </button>
     </div>
   );

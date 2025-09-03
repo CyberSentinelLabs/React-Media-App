@@ -2,10 +2,10 @@ import React, { useState, useContext } from "react";
 import { AppContext } from "../AppContext";
 
 const UploadPage = () => {
-  // We use the useState hook here to manage local component state.
   const { setPage } = useContext(AppContext);
   const [fileError, setFileError] = useState("");
   const [fileDetails, setFileDetails] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const allowedExtensions = new Set([
     "wav",
@@ -21,15 +21,10 @@ const UploadPage = () => {
   const minSizeBytes = minSizeKB * 1024;
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    setFileError("");
-    setFileDetails(null);
-
+  const validateFile = (file) => {
     if (!file) {
-      return;
+      return false;
     }
-
     const fileName = file.name;
     const fileExtension = fileName.split(".").pop().toLowerCase();
     const fileSize = file.size;
@@ -38,37 +33,100 @@ const UploadPage = () => {
       setFileError(
         "File type not supported. Please upload a .wav, .flac, .m4a, .mp3, .ogg, .opus, or .mp4 file."
       );
-      return;
+      return false;
     }
-
     if (fileSize < minSizeBytes) {
       setFileError(`File size is too small. Minimum is ${minSizeKB} KB.`);
-      return;
+      return false;
     }
     if (fileSize > maxSizeBytes) {
       setFileError(`File size is too large. Maximum is ${maxSizeMB} MB.`);
-      return;
+      return false;
     }
+    return true;
+  };
 
-    setFileDetails(file);
-    alert("File uploaded successfully!");
-    console.log("File:", file);
+  const handleFile = (file) => {
+    setFileError("");
+    setFileDetails(null);
+    if (validateFile(file)) {
+      setFileDetails(file);
+      alert("File uploaded successfully!");
+      console.log("File:", file);
+    }
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setIsDragging(false);
+    if (event.dataTransfer.files.length > 0) {
+      handleFile(event.dataTransfer.files[0]);
+    }
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDragEnter = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleFileSelect = (event) => {
+    if (event.target.files.length > 0) {
+      handleFile(event.target.files[0]);
+    }
   };
 
   return (
-    <div className="page-container upload-page">
-      <h2 className="title-text">Upload Media</h2>
-      <div className="upload-box">
-        <label htmlFor="file-upload" className="upload-label">
-          Choose a file to upload
-        </label>
-        <div className="file-input-wrapper">
+    <div className="page-container">
+      <h2 className="page-title">Upload A File</h2>
+      <div className="form-section">
+        <div
+          className={`drag-drop-area ${isDragging ? "drag-over" : ""}`}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <div className="icon-wrapper">
+            <svg
+              className="upload-icon"
+              xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+              />
+            </svg>
+          </div>
+          {/* <p className="drag-drop-text">Drag and drop your file here</p> */}
+          <p className="drag-drop-subtext">
+            Drag and drop your file here or click to browse
+          </p>
+          <p className="drag-drop-info">
+            Upload files in: .wav, .flac, .mp3, .mp4, .m4a, .ogg, .opus etc.
+          </p>
+          <p className="drag-drop-info">Maximum Size = 50MB</p>
           <input
-            id="file-upload"
-            name="file-upload"
             type="file"
-            onChange={handleFileUpload}
-            className="file-input"
+            className="file-input-hidden"
+            onChange={handleFileSelect}
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
         {fileError && <p className="error-text">{fileError}</p>}
@@ -87,8 +145,8 @@ const UploadPage = () => {
           </div>
         )}
       </div>
-      <button onClick={() => setPage("home")} className="back-button">
-        Back to Home
+      <button onClick={() => setPage("home")} className="nav-button">
+        Back
       </button>
     </div>
   );

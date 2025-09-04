@@ -2,6 +2,8 @@
 ![UploadPage Demo](assets/images/UploadPage_CS-React-App.png)
 ![RecordPage Demo](app/src/assets/images/RecordPage_CS-React-App.png)
 ![ResultsPage Demo](src/assets/images/ResultsPage_CS-React-App.png)
+![HomePage Demo](App/src/assets/images/homepage-cs-react-app.png)
+
 
 # C.S. App
 This is a React application that demonstrates routing, file validation, and media recording features. It is built to be a simple, self-contained starting point for your larger project.

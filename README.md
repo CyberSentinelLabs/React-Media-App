@@ -13,11 +13,8 @@ This is a React application that demonstrates routing, file validation, and medi
 
 
 ## How to use this code
-1. Download the code file from github
-2. Create a new React project using npx create-react-app my-app or a similar tool.
-
-Navigate to the src folder in your project.
-
-Replace the contents of your App.jsx with the code from the generated file.
-
-Run npm start to see the application in your browser.
+1.  Download the code file from github or use Git Desktop to open the code file
+2.  Create a new React project using `npx create-react-app my-app` or a similar tool.
+3.  Navigate to the `src` folder in your project.
+4.  Replace the contents of your `App.jsx` with the code from the generated file; and other files.
+5.  Run `npm start` to see the application in your browser.

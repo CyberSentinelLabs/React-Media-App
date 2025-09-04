@@ -4,6 +4,7 @@ import HomePage from "./components/HomePage";
 import UploadPage from "./components/UploadPage";
 import RecordPage from "./components/RecordPage";
 import ResultsPage from "./components/ResultsPage";
+import "./App.css";
 
 const App = () => {
   const [page, setPage] = useState("home");

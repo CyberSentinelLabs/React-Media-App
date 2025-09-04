@@ -1,7 +1,7 @@
-#C.S. Media App
+# C.S. Media App
 This is a React application that demonstrates routing, file validation, and media recording features. It is built to be a simple, self-contained starting point for your larger project.
 
-##Features
+## Features
 Client-side Routing: Uses **useState** to switch between different "pages" without a page reload.
 
 File Upload Validation: Checks for valid file types (.wav, .flac, etc.) and size limits (50KB to 50MB).

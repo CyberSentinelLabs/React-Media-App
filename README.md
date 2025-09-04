@@ -4,7 +4,7 @@
 ![HomePage Demo](App/src/assets/images/resultspage-cs-react-app.png)
 
 # C.S. App
-This is a React application that demonstrates routing, file validation, and media recording features. It is built to be a simple, self-contained starting point for your larger project.
+This is a React application that demonstrates routing, file validation, and media recording features.
 
 ## Features
 * Client-side Routing: Uses `useState` to switch between different "pages" without a page reload.

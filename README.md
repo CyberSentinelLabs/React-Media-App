@@ -1,6 +1,6 @@
 ![HomePage Demo](assets/images/HomePage_CS-React-App.png)
 ![UploadPage Demo](assets/images/UploadPage_CS-React-App.png)
-![RecordPage Demo](/src/assets/images/RecordPage_CS-React-App.png)
+![RecordPage Demo](app/src/assets/images/RecordPage_CS-React-App.png)
 ![ResultsPage Demo](src/assets/images/ResultsPage_CS-React-App.png)
 
 # C.S. App
